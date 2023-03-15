@@ -1,10 +1,10 @@
 <template>
   <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome in s-chat App"/>
+  <HelloWorld msg="Welcome in S-CHAT Application"/>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import HelloWorld from './components/Home.vue'
 
 export default {
   name: 'App',
