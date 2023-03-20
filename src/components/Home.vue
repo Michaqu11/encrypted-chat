@@ -2,7 +2,7 @@
   <div class="hello">
     <h1>{{ msg }}</h1>
     {{ step }}
-    <Steppy v-model:step="step" :finalize="route" :loading="true" primaryColor1="rgb(137, 168, 245)">
+    <Steppy v-model:step="step" :finalize="route"  primaryColor1="rgb(137, 168, 245)">
       <template #1>Logowanie</template>
       <template #2>Generowanie Klucza</template>
       <template #3>Wybór strony</template>
