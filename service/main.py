@@ -17,7 +17,7 @@ def reveiving_message(c, private_key):
 
 def create_connection(choice):
 
-    hostname = socket.gethostname()git restore
+    hostname = socket.gethostname()
     IPAddr = socket.gethostbyname(hostname)
 
     public_key, private_key = rsa.newkeys(1024)
