@@ -1,16 +1,14 @@
 <template>
   <img alt="logo" src="./assets/logo.png">
-
-  <HelloWorld msg="Welcome in S-CHAT Application"/>
+  <router-view msg="Welcome in S-CHAT Application!"></router-view>
 </template>
 
 <script>
-import HelloWorld from './components/Home.vue'
+
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
   }
 }
 </script>
@@ -22,6 +20,18 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+img {
+  height: auto;
+}
+@media (min-width: 40em) {
+  img {
+    width: 20vw;
+  }
+}
+@media (max-width: 40em) {
+  img {
+    width: 35vh;
+  }
 }
 </style>
