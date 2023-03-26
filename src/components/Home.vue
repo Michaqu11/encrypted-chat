@@ -95,8 +95,8 @@ export default {
     isSignedIn() {
       return sessionStorage.getItem(IS_SIGNED_IN);
     },
-    canToSecond() { //zmiend
-      if (!this.isSignedIn()) {
+    canToSecond() {
+      if (this.isSignedIn()) {
         return true;
       }
       location.reload();
@@ -121,8 +121,8 @@ export default {
     isKeyGenerated() {
       return sessionStorage.getItem(PUBLIC_KEY);
     },
-    canToThird() {//dasdas
-      if (this.isKeyGenerated()) {
+    canToThird() {
+      if (!this.isKeyGenerated()) {
         location.reload();
         alert("Generate key properly please");
         return false;
@@ -134,6 +134,7 @@ export default {
         "chosedSide" : this.chosedSide,
         "ip" : this.ip
       }
+      sessionStorage.setItem("chosedSide", this.chosedSide);
       axios.post(process.env.VUE_APP_BACKEND_URL + '/chat', connectionOptions)
         .then(result => { //tutaj moze byc np jakies communication id
           console.log(result);

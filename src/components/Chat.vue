@@ -24,7 +24,12 @@
             <label for="textMsg">Write your message</label>
             <textarea id="textMsg" v-model="textMsg" rows="5" cols="40" maxlength="500"></textarea>
         </div>
-        <button id="sendButton" v-if="textMsg != ''">Send</button>
+        <button id="sendButton" v-if="textMsg != ''" :onClick="sendMessage">Send</button>
+      </div>
+    </div>
+    <div class="chatContainer">
+      <div class="chatContent">
+        <div>Chat with <div v-if="chosedSide=='host'">Client</div><div v-if="chosedSide=='client'">Host</div> . . .</div>
       </div>
     </div>
 </template>
@@ -32,7 +37,8 @@
   <script>
   
   import { useRouter } from 'vue-router';
-  
+  import axios from 'axios';
+
   export default {
     name: 'ChatPage',
     props: {
@@ -43,20 +49,39 @@
     },
     setup() {
         const router = useRouter();
+        const chosedSide = sessionStorage.getItem('chosedSide');
         return {
-        router
+        router,
+        chosedSide
         }
     },
     data() {
       return {
         messageType: '',
         encodingTextType: '',
+        encodingFileType: '',
         textMsg: ''
       }
     },
     methods: {
       disconnectFromChat() {
         this.router.push({path: '/'})
+      },
+      sendMessage() {
+        let messageDto = {
+          "messageType" : this.messageType,
+          "encodingTextType" : this.encodingTextType,
+          "encodingFileType" : this.encodingFileType,
+          "textMsg" : this.textMsg
+        }
+        axios.post(process.env.VUE_APP_BACKEND_URL + '/send', messageDto)
+        .then(response => {
+          console.log(response);
+        })
+        .catch(function (error) {
+          alert("Something went wrong")
+          console.log(error);
+        });
       }
     }
     
@@ -106,7 +131,7 @@
         color: white;
         font-weight: bold;
         font-size: large;
-        max-width: 20vw;
+        max-width: 30vw;
         max-height: 10vh;
         resize: none;
     }
@@ -115,8 +140,24 @@
         margin-bottom: 1vh;
         font-weight: bold;
         font-size: large;
+        border-radius: 1vh;
         background-color: rgb(137, 168, 245);
         color: white
+    }
+    .chatContainer {
+      display: grid;
+      place-items: center;
+      margin-top: 2vh;
+    }
+    .chatContent {
+      background-color: black;
+      border-radius: 1vh;
+      width: 25vw;
+      height: 40vh;
+      color: white;
+      font-size: large;
+      font-weight: bold;
+      padding: 5px;
     }
   </style>
   
