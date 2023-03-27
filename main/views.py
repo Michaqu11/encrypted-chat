@@ -1,24 +1,18 @@
 from django.shortcuts import render
 from django.http import HttpResponse,  JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from config.ConfigFile import FIREBASE_CONFIG
 
+import datetime
 import pyrebase
 import bcrypt
 import rsa
 
-firebaseConfig = {
-  "apiKey": "AIzaSyBp5y8j9lrwqZf1ptuU-35VFM1GIpLhPyw",
-  "authDomain": "fir-chat-c3185.firebaseapp.com",
-  "databaseURL": "https://fir-chat-c3185-default-rtdb.europe-west1.firebasedatabase.app",
-  "projectId": "fir-chat-c3185",
-  "storageBucket": "fir-chat-c3185.appspot.com",
-  "messagingSenderId": "822517477520",
-  "appId": "1:822517477520:web:b79b724e4372958057e815"
-}
-
-firebase = pyrebase.initialize_app(firebaseConfig)
+firebase = pyrebase.initialize_app(FIREBASE_CONFIG)
 authe = firebase.auth()
 database = firebase.database()
+save_key = None
+ip = None
 
 # Create your views here.
 
@@ -32,7 +26,7 @@ def login(request):
   if request.POST.get('login') not in data:
     salt = bcrypt.gensalt()
     database.child('Data').child('users').push({
-      "date": request.POST.get('date'),
+      "date": datetime.datetime.now(),
       "login": request.POST.get('login'),
       "password": bcrypt.hashpw(request.POST.get('password').encode('utf-8'), salt).decode('utf-8'),
     })
@@ -45,9 +39,15 @@ def login(request):
 
 @csrf_exempt
 def generate_public_key(request):
-  public_key, private_key = rsa.newkeys(1024)
+  public_key, private_key = rsa.newkeys(1024 if request.POST.get('size') == "1024" else 2048)
+  save_key = private_key
 
   result = {
     "public_key": '{0}'.format(public_key)
   }
   return JsonResponse(result, safe=False)
+
+
+def chat(request):
+  side = request.POST.get('chosedSide')
+  ip = request.POST.get('ip')

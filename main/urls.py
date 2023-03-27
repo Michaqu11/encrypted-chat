@@ -5,5 +5,6 @@ from . import views
 urlpatterns = [
     path("", views.index, name="index"),
     path("login", views.login, name="login"),
-    path("public_key", views.generate_public_key, name="public_key")
+    path("key", views.generate_public_key, name="key"),
+    path("chat", views.chat, name="chat")
 ]
