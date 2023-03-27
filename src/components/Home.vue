@@ -15,9 +15,17 @@
       </template>
 
       <template #2>
-        <div class="text" v-if="canToSecond()">Generate a key</div>
-        <button class="button" :onClick="generateKey">Generate</button>
-        <div id="successText" v-if="isKey">Key generated successfully</div>
+        <div class="secondContainer">
+          <div class="text" v-if="canToSecond()">Generate a key</div>
+          <div>
+            <input type="radio" id="1024" value="1024" v-model="rsaSize" />
+            <label for="1024">RSA-1024</label>
+            <input type="radio" id="2048" value="2048" v-model="rsaSize" />
+            <label for="2048">RSA-2048</label>
+          </div>
+          <button class="button" :onClick="generateKey">Generate</button>
+          <div id="successText" v-if="isKey">Key generated successfully</div>
+        </div>
       </template>
 
       <template #3>
@@ -70,7 +78,8 @@ export default {
       password: '',
       chosedSide: '',
       ip: '',
-      isKey: false
+      isKey: false,
+      rsaSize: 1024
     }
   },
   methods: {
@@ -104,7 +113,7 @@ export default {
       return false;
     },
     generateKey() {
-      axios.get(process.env.VUE_APP_BACKEND_URL + '/key')
+      axios.get(process.env.VUE_APP_BACKEND_URL + '/key', { params: { size : this.rsaSize }})
       .then(result => {
         sessionStorage.setItem(PUBLIC_KEY, result.data);
         this.isKey = true;
@@ -199,5 +208,13 @@ label {
   font-weight: bold;
   font-size: large;
   color: green;
+}
+.secondContainer {
+  display: block;
+}
+.secondContainer label, .secondContainer input {
+  margin-right: 1vh;
+  font-size: large;
+  font-weight: bold;
 }
 </style>
