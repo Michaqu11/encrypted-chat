@@ -6,5 +6,6 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("login", views.login, name="login"),
     path("key", views.generate_public_key, name="key"),
-    path("chat", views.chat, name="chat")
+    path("side", views.side, name="side"),
+    path("start_connection", views.start_connection, name="start_connection")
 ]
