@@ -1,10 +1,20 @@
-import sys
 import socket
 import threading
 
 import rsa
 import time
 from random import randrange
+
+import os
+import sys
+
+
+
+sys.path.insert(0, '..')
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+channel_layer = get_channel_layer()
 
 def sending_messages(c, public_partner):
     while True:
@@ -13,15 +23,32 @@ def sending_messages(c, public_partner):
         time.sleep(5+randrange(5))
         c.send(rsa.encrypt(message.encode(), public_partner))
         print("You: " + message)
+        async_to_sync(channel_layer.group_send)(
+            'chat',
+            {
+                "type": "chat.message",
+                'message': message,
+                'from': "send"
+            }
+        )
 
 
 def reveiving_message(c, private_key, size):
     while True:
-        print("Partner: " + rsa.decrypt(c.recv(size), private_key).decode())
+        message = rsa.decrypt(c.recv(size), private_key).decode()
+        print("Partner: " + message)
+        async_to_sync(channel_layer.group_send)(
+            'chat',
+            {
+                "type": "chat.message",
+                'message': message,
+                'from': "recv"
+            }
+        )
+
 
 def create_connection(side, IPAddr, size, public_key, private_key):
-
-    public_partner = None 
+    public_partner = None
     
     if side == "host":  # host
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

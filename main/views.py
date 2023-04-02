@@ -1,5 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse,  JsonResponse
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from config.ConfigFile import FIREBASE_CONFIG
 from service.main import create_connection
@@ -25,8 +26,9 @@ def print_data():
   print(public_key, private_key, size, ip)
 
 
-def index(response):
-    return HttpResponse("<h1>S-CHAT</h1>")
+def index(request):
+    return render(request, 'index.html', context={'text': 'S-CHAT'})
+    # return HttpResponse("<h1>S-CHAT</h1>")
 
 
 @csrf_exempt
@@ -39,7 +41,7 @@ def login(request):
       "login": request.POST.get('login'),
       "password": bcrypt.hashpw(request.POST.get('password').encode('utf-8'), salt).decode('utf-8'),
     })
-  
+
   result = {
     "error": False
   }
@@ -54,7 +56,7 @@ def generate_public_key(request):
   result = {
     "public_key": '{0}'.format(public_key)
   }
-  
+
   return JsonResponse(result, safe=False)
 
 @csrf_exempt
@@ -67,12 +69,12 @@ def side(request):
 
     temp_ip = socket.gethostbyname(hostname)
   else:
-    temp_ip  = request.POST.get('ip') 
+    temp_ip  = request.POST.get('ip')
 
   ip = temp_ip
-  
+
   return JsonResponse({"ip" : '{0}'.format(ip)}, safe=False)
-    
+
 @csrf_exempt
 def start_connection(request):
   create_connection(side, ip, size, public_key, private_key)
