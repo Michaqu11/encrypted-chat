@@ -9,28 +9,49 @@ import os
 import sys
 
 
-
 sys.path.insert(0, '..')
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-channel_layer = get_channel_layer()
+import threading
 
+channel_layer = get_channel_layer()
+messagesToSend = []
+
+condition_object = threading.Condition()
+
+def pushToMessages(message):
+    condition_object.acquire()
+    messagesToSend.insert(0, message)
+    condition_object.notify()
+    condition_object.release()
+    
 def sending_messages(c, public_partner):
     while True:
-        nr = randrange(100000)
-        message = 'test ({0})'.format(nr) 
-        time.sleep(5+randrange(5))
-        c.send(rsa.encrypt(message.encode(), public_partner))
-        print("You: " + message)
-        async_to_sync(channel_layer.group_send)(
-            'chat',
-            {
-                "type": "chat.message",
-                'message': message,
-                'from': "send"
-            }
-        )
+        if(len(messagesToSend)):
+            message= messagesToSend.pop()
+            c.send(rsa.encrypt(message.encode(), public_partner))
+            print("You: " + message)
+        else:
+            condition_object.acquire()
+            condition_object.wait()
+            condition_object.release()
+        
+
+
+        # nr = randrange(100000)
+        # message = 'test ({0})'.format(nr) 
+        # time.sleep(5+randrange(5))
+        # c.send(rsa.encrypt(message.encode(), public_partner))
+        # print("You: " + message)
+        # async_to_sync(channel_layer.group_send)(
+        #     'chat',
+        #     {
+        #         "type": "chat.message",
+        #         'message': message,
+        #         'from': "send"
+        #     }
+        # )
 
 
 def reveiving_message(c, private_key, size):
