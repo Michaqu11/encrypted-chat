@@ -29,15 +29,18 @@
     </div>
     <div class="chatContainer">
       <div class="chatContent">
-        <div>Chat with <div v-if="chosedSide=='host'">Client</div><div v-if="chosedSide=='client'">Host</div> . . .</div>
+        <div>Chat with <div v-if="chosedSide=='host'">Client</div><div v-if="chosedSide=='client'">Host</div></div>
+        <div  class="allMessages" v-for="message in allMessages" :key="message">
+          <div v-if="message.side == 'my'" class="my">{{ message.message }}</div>
+          <div v-if="message.side == 'his'" class="his">{{ message.message }}</div>
+        </div>
       </div>
     </div>
 </template>
   
   <script>
   
-  import { useRouter } from 'vue-router';
-  import axios from 'axios';
+import { useRouter } from 'vue-router';
 
   export default {
     name: 'ChatPage',
@@ -45,44 +48,53 @@
       msg: String
     },
     components:{
-      
-    },
-    setup() {
-        const router = useRouter();
-        const chosedSide = sessionStorage.getItem('chosedSide');
-        return {
-        router,
-        chosedSide
-        }
     },
     data() {
       return {
         messageType: '',
         encodingTextType: '',
         encodingFileType: '',
-        textMsg: ''
+        textMsg: '',
+        messagesFromFriend: [],
+        myMessages: [],
+        allMessages: [],
+        connection: null,
+        router: useRouter(),
+        chosedSide: sessionStorage.getItem('chosedSide')
       }
+    },
+    mounted() {
+      let vueInstance = this;
+      this.connection = new WebSocket(`${process.env.VUE_APP_SOCKET_URL}`);
+
+      this.connection.onmessage = function(event) {
+        vueInstance.messagesFromFriend.push(JSON.parse(event.data).message);
+        vueInstance.allMessages.push({
+          "message":JSON.parse(event.data).message,
+          "side":"his"
+        });
+      }
+    },
+    beforeUnmount() {
+      this.connection.close();
     },
     methods: {
       disconnectFromChat() {
         this.router.push({path: '/'})
       },
       sendMessage() {
-        let messageDto = {
-          "messageType" : this.messageType,
-          "encodingTextType" : this.encodingTextType,
-          "encodingFileType" : this.encodingFileType,
-          "textMsg" : this.textMsg
-        }
-        axios.post(process.env.VUE_APP_BACKEND_URL + '/send', messageDto)
-        .then(response => {
-          console.log(response);
-        })
-        .catch(function (error) {
-          alert("Something went wrong")
-          console.log(error);
+        if (this.messageType == 'text') {
+          this.connection.send(JSON.stringify({
+            message: this.textMsg
+          }));
+          this.myMessages.push(this.textMsg);
+          this.allMessages.push({
+          "message":this.textMsg,
+          "side":"my"
         });
-      }
+        }
+        this.textMsg = "";
+      },
     }
     
   }
@@ -152,12 +164,27 @@
     .chatContent {
       background-color: black;
       border-radius: 1vh;
-      width: 25vw;
-      height: 40vh;
+      width: 40vw;
+      height: auto;
       color: white;
       font-size: large;
       font-weight: bold;
       padding: 5px;
+    }
+    .allMessages{
+      margin-top: 0.5vh;
+      display: block;
+    }
+    .my {
+      background-color: cornflowerblue;
+      text-align: center;
+      width: 50%;
+      margin-left: 50%;
+    }
+    .his {
+      background-color: lightgray;
+      text-align: center;
+      width: 50%;
     }
   </style>
   

@@ -144,9 +144,18 @@ export default {
         "ip" : this.ip
       }
       sessionStorage.setItem("chosedSide", this.chosedSide);
-      axios.post(process.env.VUE_APP_BACKEND_URL + '/chat', connectionOptions)
-        .then(result => { //tutaj moze byc np jakies communication id
+      axios.post(process.env.VUE_APP_BACKEND_URL + '/side', connectionOptions)
+        .then(result => {
+          this.ip = result.data;
           console.log(result);
+        })
+        .catch(function(error) {
+          alert("Something went wrong")
+          console.log(error);
+        })
+        axios.post(process.env.VUE_APP_BACKEND_URL + '/start_connection')
+        .then(result => {
+          console.log(result)
           this.router.push({path: 'chat'})
         })
         .catch(function(error) {
