@@ -1,12 +1,12 @@
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
-import json
 
+import json
 import sys
 
-sys.path.insert(0, '..')
 from service.main import pushToMessages
 
+sys.path.insert(0, '..')
 
 class WSConsumer(WebsocketConsumer):
     def connect(self):
@@ -15,7 +15,6 @@ class WSConsumer(WebsocketConsumer):
         async_to_sync(self.channel_layer.group_add)(
            self.room_name, self.channel_name
         )
-
         self.accept()
         print("CONNECTED")
 
@@ -26,10 +25,7 @@ class WSConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         print(" MESSAGE RECEIVED")
         data = json.loads(text_data)
-        message = data['message']
-        pushToMessages(message)
-        
-
+        pushToMessages(data)
 
     def chat_message(self, event):
         self.send(text_data=json.dumps({"message": event["message"], "from": event["from"]}))

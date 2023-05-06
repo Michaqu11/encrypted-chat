@@ -21,6 +21,8 @@ private_key = None
 size = None
 side = None
 ip = None
+mode = "ECB"
+
 
 
 # Create your views here.
@@ -71,8 +73,10 @@ def side(request):
     body = json.loads(request.body)
     side = body['chosedSide']
     global ip
+    global mode
     if side == "host":
         hostname = socket.gethostname()
+        mode = body['encodingType']
 
         temp_ip = socket.gethostbyname(hostname)
     else:
@@ -85,8 +89,7 @@ def side(request):
 
 @csrf_exempt
 def start_connection(request):
-    create_connection(side, ip, size, public_key, private_key)
-
+    create_connection(side, ip, size, public_key, private_key, mode)
     result = {
         "start-connection": True
     }
