@@ -99,7 +99,7 @@ def reveiving_message(c, private_key, size):
         )
 
 
-def create_connection(side, IPAddr, size, public_key, private_key, mode):
+def create_connection(side, IPAddr, size, public_key, private_key):
     public_partner = None
     global session_key
     if side == "host":  # host
@@ -113,7 +113,6 @@ def create_connection(side, IPAddr, size, public_key, private_key, mode):
         
         session_key = get_random_bytes(16)
         client.send(rsa.encrypt(session_key, public_partner)) # session key
-        client.send(rsa.encrypt(mode.encode(), public_partner)) # AES mode
 
 
     elif side == "client":
@@ -122,7 +121,6 @@ def create_connection(side, IPAddr, size, public_key, private_key, mode):
         public_partner = rsa.PublicKey.load_pkcs1(client.recv(size))
         client.send(public_key.save_pkcs1("PEM"))
         session_key = rsa.decrypt(client.recv(size), private_key)
-        mode = rsa.decrypt(client.recv(size), private_key).decode()
 
     else:
         exit(0)
