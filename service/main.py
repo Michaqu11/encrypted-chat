@@ -14,6 +14,8 @@ from Crypto.Random import get_random_bytes
 from Crypto import Random
 from base64 import b64encode, b64decode
 
+import json
+
 sys.path.insert(0, '..')
 
 channel_layer = get_channel_layer()
@@ -40,23 +42,27 @@ def pushToMessages(message):
     condition_object.notify()
     condition_object.release()
     
-def sending_messages(c, public_partner, mode):
+def sending_messages(c, public_partner):
 
     while True:
         if(len(messagesToSend)):
             data = messagesToSend.pop()
             plain_text = pad(data['message'])
-
+            mode = data['mode']
             if mode == "CBC":
                 iv = Random.new().read(block_size)
                 cipher = AES.new(session_key, AES.MODE_CBC, iv)
                 encrypted_text = cipher.encrypt(plain_text.encode())
-                c.send(b64encode(iv + encrypted_text))
+
+                json_data = json.dumps({"encrypted_text": b64encode(iv + encrypted_text).decode(), "mode": mode})
+
             else:
                 cipher = AES.new(session_key, AES.MODE_ECB)
                 encrypted_text = cipher.encrypt(plain_text.encode())
-                c.send(b64encode(encrypted_text))
-
+                json_data = json.dumps({"encrypted_text":b64encode(encrypted_text).decode(), "mode": mode})
+            
+        
+            c.send(bytes(json_data, 'utf-8'))
             print("You: " + data['message'])
 
         else:
@@ -65,16 +71,18 @@ def sending_messages(c, public_partner, mode):
             condition_object.release()
     
 
-def reveiving_message(c, private_key, size, mode):
+def reveiving_message(c, private_key, size):
     while True:
+        json_data = json.loads(c.recv(size).decode("utf-8"))
+        mode = json_data['mode']
         if mode == "CBC":
-            encrypted_text = b64decode(c.recv(size).decode("utf-8"))
+            encrypted_text = b64decode(json_data['encrypted_text'])
             iv = encrypted_text[:block_size]
             cipher = AES.new(session_key, AES.MODE_CBC, iv)
             plain_text = cipher.decrypt(encrypted_text[block_size:]).decode()
             message = unpad(plain_text)
         else:
-            encrypted_text = b64decode(c.recv(size).decode("utf-8"))
+            encrypted_text = b64decode(json_data['encrypted_text'])
             cipher = AES.new(session_key, AES.MODE_ECB)
             plain_text = cipher.decrypt(encrypted_text).decode()
             message = unpad(plain_text)
@@ -119,6 +127,6 @@ def create_connection(side, IPAddr, size, public_key, private_key, mode):
     else:
         exit(0)
 
-    threading.Thread(target=sending_messages, args=(client,public_partner, mode)).start()
-    threading.Thread(target=reveiving_message, args=(client, private_key, size, mode)).start()
+    threading.Thread(target=sending_messages, args=(client,public_partner)).start()
+    threading.Thread(target=reveiving_message, args=(client, private_key, size)).start()
 

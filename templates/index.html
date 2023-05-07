@@ -26,7 +26,6 @@
 </div>
 
    
-
     <script>
         var socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/`);
         
@@ -55,7 +54,7 @@
         function sendMessage(){
             var message = document.getElementById('text').value;
             if(message){
-                socket.send(JSON.stringify({message: message}))
+                socket.send(JSON.stringify({message: message, mode: "ECB", type: "text"}))
                 appendMessage({message: message, from: "send"})
             }
           

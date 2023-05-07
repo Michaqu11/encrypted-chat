@@ -23,11 +23,12 @@ class WSConsumer(WebsocketConsumer):
         print("DISCONNECED CODE: ", close_code)
 
     def receive(self, text_data=None, bytes_data=None):
-        print(" MESSAGE RECEIVED")
+        print("MESSAGE RECEIVED")
         data = json.loads(text_data)
         pushToMessages(data)
 
     def chat_message(self, event):
+        print("MESSAGE SENDED")
         self.send(text_data=json.dumps({"message": event["message"], "from": event["from"]}))
 
 
