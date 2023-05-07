@@ -58,7 +58,7 @@ def login(request):
 @csrf_exempt
 def generate_public_key(request):
     global size, public_key, private_key
-    size = 1024 if request.POST.get('size') == "1024" else 2048
+    size = 1024 if request.GET.get('size') == "1024" else 2048
     public_key, private_key = rsa.newkeys(size)
     result = {
         "public_key": '{0}'.format(public_key)
@@ -77,7 +77,6 @@ def side(request):
     if side == "host":
         hostname = socket.gethostname()
         mode = body['encodingType']
-
         temp_ip = socket.gethostbyname(hostname)
     else:
         temp_ip = body['ip']
