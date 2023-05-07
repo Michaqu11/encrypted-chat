@@ -11,6 +11,8 @@ import threading
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
+from Crypto import Random
+from base64 import b64encode, b64decode
 
 sys.path.insert(0, '..')
 
@@ -18,7 +20,19 @@ channel_layer = get_channel_layer()
 messagesToSend = []
 session_key = None
 condition_object = threading.Condition()
+block_size = AES.block_size
 
+def pad( plain_text):
+    number_of_bytes_to_pad = block_size - len(plain_text) % block_size
+    ascii_string = chr(number_of_bytes_to_pad)
+    padding_str = number_of_bytes_to_pad * ascii_string
+    padded_plain_text = plain_text + padding_str
+    return padded_plain_text
+
+def unpad(plain_text):
+    last_character = plain_text[len(plain_text) - 1:]
+    bytes_to_remove = ord(last_character)
+    return plain_text[:-bytes_to_remove]
 
 def pushToMessages(message):
     condition_object.acquire()
@@ -26,25 +40,47 @@ def pushToMessages(message):
     condition_object.notify()
     condition_object.release()
     
-def sending_messages(c, public_partner, cipher):
+def sending_messages(c, public_partner, mode):
 
     while True:
         if(len(messagesToSend)):
             data = messagesToSend.pop()
-            # c.send(cipher.encrypt(data['message'].encode()))
-            c.send(rsa.encrypt(data['message'].encode(), public_partner))
+            plain_text = pad(data['message'])
+
+            if mode == "CBC":
+                iv = Random.new().read(block_size)
+                cipher = AES.new(session_key, AES.MODE_CBC, iv)
+                encrypted_text = cipher.encrypt(plain_text.encode())
+                c.send(b64encode(iv + encrypted_text))
+            else:
+                cipher = AES.new(session_key, AES.MODE_ECB)
+                encrypted_text = cipher.encrypt(plain_text.encode())
+                c.send(b64encode(encrypted_text))
+
             print("You: " + data['message'])
+
         else:
             condition_object.acquire()
             condition_object.wait()
             condition_object.release()
     
 
-def reveiving_message(c, private_key, size, decipher):
+def reveiving_message(c, private_key, size, mode):
     while True:
-        message = rsa.decrypt(c.recv(size), private_key).decode()
-        # message = decipher.decrypt(c.recv(size)).decode()
+        if mode == "CBC":
+            encrypted_text = b64decode(c.recv(size).decode("utf-8"))
+            iv = encrypted_text[:block_size]
+            cipher = AES.new(session_key, AES.MODE_CBC, iv)
+            plain_text = cipher.decrypt(encrypted_text[block_size:]).decode()
+            message = unpad(plain_text)
+        else:
+            encrypted_text = b64decode(c.recv(size).decode("utf-8"))
+            cipher = AES.new(session_key, AES.MODE_ECB)
+            plain_text = cipher.decrypt(encrypted_text).decode()
+            message = unpad(plain_text)
+
         print("Partner: " + message)
+
         async_to_sync(channel_layer.group_send)(
             'chat',
             {
@@ -83,8 +119,6 @@ def create_connection(side, IPAddr, size, public_key, private_key, mode):
     else:
         exit(0)
 
-    cipher = AES.new(session_key,  AES.MODE_ECB if mode == "ECB" else AES.MODE_CBC)
-
-    threading.Thread(target=sending_messages, args=(client,public_partner, cipher)).start()
-    threading.Thread(target=reveiving_message, args=(client, private_key, size, cipher)).start()
+    threading.Thread(target=sending_messages, args=(client,public_partner, mode)).start()
+    threading.Thread(target=reveiving_message, args=(client, private_key, size, mode)).start()
 
