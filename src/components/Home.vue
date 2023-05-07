@@ -38,17 +38,6 @@
             <input type="radio" id="host" value="host" v-model="chosedSide" />
             <label for="host">Host</label>
           </div>
-          <div v-if="chosedSide == 'host'">
-            <div class="text" v-i>Choose encoding type</div>
-            <div>
-                <input type="radio" id="ecb" value="ECB" v-model="encodingType" />
-                <label for="ecb">ECB</label>
-            </div>
-            <div>
-                <input type="radio" id="cbc" value="CBC" v-model="encodingType" />
-                <label for="cbc">CBC</label>
-            </div>
-          </div>
           <div id="ipDiv" v-if="chosedSide == 'client'">
             <label for="ip">Ip: </label>
             <input type="text" id="ip" v-model="ip" autocomplete="off"/>
@@ -66,7 +55,6 @@ import axios from 'axios';
 import { useRouter } from 'vue-router';
 
 const IS_SIGNED_IN = 'isSignedIn';
-const PUBLIC_KEY = 'publicKey';
 
 export default {
   name: 'HomePage',
@@ -92,7 +80,6 @@ export default {
       ip: '',
       isKey: false,
       rsaSize: 1024,
-      encodingType: '',
       signedIn: false
     }
   },
@@ -127,23 +114,12 @@ export default {
       alert("Please sign in")
       return false;
     },
-    generateKey() {
-      axios.get(process.env.VUE_APP_BACKEND_URL + '/key', { params: { size : this.rsaSize }})
-      .then(result => {
-        sessionStorage.setItem(PUBLIC_KEY, result.data);
-        this.isKey = true;
-      })
-      .catch(function (error) {
-        if (sessionStorage.getItem(PUBLIC_KEY)) {
-            sessionStorage.removeItem(PUBLIC_KEY);
-            this.isKey = false;
-        }
-          alert("Something went wrong")
-          console.log(error);
-      })
+    async generateKey() {
+      await axios.get(process.env.VUE_APP_BACKEND_URL + '/key', { params: { size : this.rsaSize }});
+      this.isKey = true;
     },
     isKeyGenerated() {
-      return sessionStorage.getItem(PUBLIC_KEY);
+      return this.isKey;
     },
     canToThird() {
       if (!this.isKeyGenerated()) {
@@ -156,8 +132,7 @@ export default {
     connectToChat() {
       let connectionOptions = {
         "chosedSide" : this.chosedSide,
-        "ip" : this.ip,
-        "encodingType" : this.encodingType
+        "ip" : this.ip
       }
       sessionStorage.setItem("chosedSide", this.chosedSide);
       axios.post(process.env.VUE_APP_BACKEND_URL + '/side', connectionOptions)

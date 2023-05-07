@@ -5,22 +5,29 @@
       <div class="text">Choose message type</div>
       <div class="typeContainer">
         <div>
-            <input type="radio" id="text" value="text" v-model="messageType" />
+            <input type="radio" id="text" value="text" v-model="messageType" v-on:change="changeMessageType"/>
             <label for="text">Text</label>
         </div>
         <div>
-            <input type="radio" id="file" value="file" v-model="messageType" />
+            <input type="radio" id="file" value="file" v-model="messageType" v-on:change="changeMessageType"/>
             <label for="file">File</label>
         </div>
-        <div class="textMsgContainer" v-if="messageType === 'text'">
+        <div class="text" v-i>Choose encoding type</div>
+        <div>
+            <input type="radio" id="ecb" value="ECB" v-model="encodingType" />
+            <label for="ecb">ECB</label>
+        </div>
+        <div>
+          <input type="radio" id="cbc" value="CBC" v-model="encodingType" />
+          <label for="cbc">CBC</label>
+        </div>
+        <div class="textMsgContainer" v-if="(messageType === 'text' && encodingType !== '')">
             <label for="textMsg">Write your message</label>
             <textarea id="textMsg" v-model="textMsg" rows="5" cols="40" maxlength="500"></textarea>
         </div>
-        <div v-if="messageType === 'file'">
+        <div v-if="(messageType === 'file' && encodingType !== '')">
           <input class="fileInput" type="file" @change="onFileChange" ref="file"/>
-        </div>
-        <button id="sendButton" v-if="textMsg !== ''" :onClick="sendMessage" :disabled="!status">Send</button>
-      </div>
+        </div><button id="sendButton" v-if="textMsg !== ''" :onClick="sendMessage" :disabled="!status">Send</button></div>
     </div>
     <div class="chatContainer">
       <div class="chatContent">
@@ -49,6 +56,7 @@ import { useRouter } from 'vue-router';
         messageType: '',
         textMsg: '',
         fileName: '',
+        encodingType: '',
         messagesFromFriend: [],
         myMessages: [],
         allMessages: [],
@@ -90,7 +98,8 @@ import { useRouter } from 'vue-router';
       sendMessage() {
         this.connection.send(JSON.stringify({
           message: this.textMsg,
-          type: this.messageType
+          type: this.messageType,
+          mode: this.encodingType
         }));
         this.addMyMessage();
       },
@@ -119,6 +128,9 @@ import { useRouter } from 'vue-router';
         this.fileName = this.$refs.file.files[0].name;
         fReader.readAsDataURL(this.$refs.file.files[0]);
       },
+      changeMessageType() {
+        this.textMsg = '';
+      }
     }
     
   }
