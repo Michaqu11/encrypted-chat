@@ -11,6 +11,7 @@
           <label for="password">Password: </label>
           <input v-model="password" type="password" name="password" autocomplete="off">
           <button class="button" id="signInButton" :disabled="!(login.length && password.length)" :onClick="signIn">Sign In</button>
+          <div id="successText" v-if="signedIn">Signed In successfully</div>
         </div>
       </template>
 
@@ -36,6 +37,17 @@
             <label for="client">Client</label>
             <input type="radio" id="host" value="host" v-model="chosedSide" />
             <label for="host">Host</label>
+          </div>
+          <div v-if="chosedSide == 'host'">
+            <div class="text" v-i>Choose encoding type</div>
+            <div>
+                <input type="radio" id="ecb" value="ECB" v-model="encodingType" />
+                <label for="ecb">ECB</label>
+            </div>
+            <div>
+                <input type="radio" id="cbc" value="CBC" v-model="encodingType" />
+                <label for="cbc">CBC</label>
+            </div>
           </div>
           <div id="ipDiv" v-if="chosedSide == 'client'">
             <label for="ip">Ip: </label>
@@ -79,7 +91,9 @@ export default {
       chosedSide: '',
       ip: '',
       isKey: false,
-      rsaSize: 1024
+      rsaSize: 1024,
+      encodingType: '',
+      signedIn: false
     }
   },
   methods: {
@@ -91,6 +105,7 @@ export default {
       axios.post(process.env.VUE_APP_BACKEND_URL + '/login', userDto)
         .then(response => {
           console.log(response);
+          this.signedIn = true;
           sessionStorage.setItem(IS_SIGNED_IN, true);
         })
         .catch(function (error) {
@@ -141,19 +156,23 @@ export default {
     connectToChat() {
       let connectionOptions = {
         "chosedSide" : this.chosedSide,
-        "ip" : this.ip
+        "ip" : this.ip,
+        "encodingType" : this.encodingType
       }
       sessionStorage.setItem("chosedSide", this.chosedSide);
       axios.post(process.env.VUE_APP_BACKEND_URL + '/side', connectionOptions)
         .then(result => {
           this.ip = result.data;
           console.log(result);
+          this.startConnection();
         })
         .catch(function(error) {
           alert("Something went wrong")
           console.log(error);
         })
-        axios.post(process.env.VUE_APP_BACKEND_URL + '/start_connection')
+    },
+    startConnection() {
+      axios.post(process.env.VUE_APP_BACKEND_URL + '/start_connection')
         .then(result => {
           console.log(result)
           this.router.push({path: 'chat'})
@@ -174,7 +193,7 @@ h1 {
   color: rgb(137, 168, 245);
 }
 .text {
-  margin-bottom: 2vh;
+  margin-bottom: 1vh;
   font-weight: bolder;
   font-size: x-large;
 }
