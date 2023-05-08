@@ -54,7 +54,7 @@
         function sendMessage(){
             var message = document.getElementById('text').value;
             if(message){
-                socket.send(JSON.stringify({message: message, mode: "CBC", type: "text"}))
+                socket.send(JSON.stringify({message: message, mode: "ECB", type: "file"}))
                 appendMessage({message: message, from: "send"})
             }
           
