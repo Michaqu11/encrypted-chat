@@ -48,7 +48,9 @@
         }
         
         socket.onmessage = function(e){
-            appendMessage(JSON.parse(e.data));
+            const data = JSON.parse(e.data);
+            if(data.type == "message") appendMessage(data);
+            else console.log(data.chunk / data.max * 100, "%");
         }
         
         function sendMessage(){

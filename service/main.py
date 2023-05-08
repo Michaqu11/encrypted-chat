@@ -83,9 +83,21 @@ def sending_messages(c, public_partner):
                 c.send(bytes(json_data, 'utf-8'))
 
                 if max_size:
+                    chunkNr = 0
                     for i in range(0, len(encrypted_text), size):
                         chunk = encrypted_text[i:i + size]
                         sleep(conifg)
+                        chunkNr = chunkNr + 1
+                        async_to_sync(channel_layer.group_send)(
+                        'chat',
+                        {
+                            "type": "chat.message",
+                            'information': "progressInformation",
+                            'max': max_size + 1,
+                            'chunk': chunkNr,
+                            'from': "send"
+                        }
+                    )
                         c.send(b64encode(chunk))
                 else:
                     c.send(b64encode(encrypted_text))
@@ -116,8 +128,9 @@ def reveiving_message(c, private_key, size):
                 cipher = AES.new(session_key, AES.MODE_ECB)
                 plain_text = cipher.decrypt(encrypted_text).decode()
                 message = unpad(plain_text)
+                
             print("Partner: " + message)
-
+            result = message
         else:
             message = b""
 
@@ -131,9 +144,22 @@ def reveiving_message(c, private_key, size):
             max_size = json_data['max_size']
 
             if max_size:
+                chunkNr = 0
                 for i in range(0, max_size + 1):
                     data = c.recv(size).decode("utf-8")
-                    message = message + b64decode(data)
+                    message = message + b64decode(data)        
+                    chunkNr = chunkNr + 1
+                    async_to_sync(channel_layer.group_send)(
+                        'chat',
+                        {
+                            "type": "chat.message",
+                            'information': "progressInformation",
+                            'max': max_size + 1,
+                            'chunk': chunkNr,
+                            'from': "recv"
+                        }
+                    )
+                    
             else:
                 data = c.recv(size).decode("utf-8")
                 message = b64decode(data)
@@ -149,6 +175,8 @@ def reveiving_message(c, private_key, size):
             'chat',
             {
                 "type": "chat.message",
+                'information': "message",
+                'typeMessage': type,
                 'message': result,
                 'from': "recv"
             }
