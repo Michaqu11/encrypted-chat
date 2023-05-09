@@ -26,7 +26,7 @@ messagesToSend = []
 session_key = None
 condition_object = threading.Condition()
 block_size = AES.block_size
-conifg = 1/100000
+conifg = 1/100
 
 
 def pad(plain_text):
@@ -74,10 +74,10 @@ def sending_messages(c, public_partner):
                 print("You: " + data['message'])
             
             else: #file
-                size = 256
+                size = 768
                 max_size = int(len(encrypted_text) / size)
+                max_size = max_size + 1 if len(encrypted_text) % size else max_size
                 sha256hash = hashlib.sha256(plain_text.encode()).hexdigest()
-                print('hash', sha256hash)
                 if mode == "CBC":
                     json_data = json.dumps({"type":  data['type'], "iv": b64encode(iv).decode(), "mode": mode, "max_size": max_size, "hash": sha256hash, "fileName": fileName})
                 else:
@@ -90,18 +90,18 @@ def sending_messages(c, public_partner):
                     for i in range(0, len(encrypted_text), size):
                         chunk = encrypted_text[i:i + size]
                         sleep(conifg)
+                        c.send(b64encode(chunk))
                         chunkNr = chunkNr + 1
                         async_to_sync(channel_layer.group_send)(
-                        'chat',
-                        {
-                            "type": "chat.message",
-                            'information': "progressInformation",
-                            'max': max_size + 1,
-                            'chunk': chunkNr,
-                            'from': "send"
-                        }
-                    )
-                        c.send(b64encode(chunk))
+                            'chat',
+                            {
+                                "type": "chat.message",
+                                'information': "progressInformation",
+                                'max': max_size,
+                                'chunk': chunkNr,
+                                'from': "send"
+                            }
+                        )
                 else:
                     c.send(b64encode(encrypted_text))
                 
@@ -147,19 +147,19 @@ def reveiving_message(c, private_key, size):
                 cipher = AES.new(session_key, AES.MODE_ECB)
 
             max_size = json_data['max_size']
-
             if max_size:
                 chunkNr = 0
-                for i in range(0, max_size + 1):
+                for i in range(0, max_size):
                     data = c.recv(size).decode("utf-8")
                     message = message + b64decode(data)        
                     chunkNr = chunkNr + 1
+
                     async_to_sync(channel_layer.group_send)(
                         'chat',
                         {
                             "type": "chat.message",
                             'information': "progressInformation",
-                            'max': max_size + 1,
+                            'max': max_size,
                             'chunk': chunkNr,
                             'from': "recv"
                         }

@@ -50,13 +50,13 @@
         socket.onmessage = function(e){
             const data = JSON.parse(e.data);
             if(data.type == "message") appendMessage(data);
-            else console.log(data.chunk / data.max * 100, "%");
+            else console.log(data.chunk, data.max, data.chunk / data.max * 100, "%");
         }
         
         function sendMessage(){
             var message = document.getElementById('text').value;
             if(message){
-                socket.send(JSON.stringify({message: message, mode: "ECB", type: "file"}))
+                socket.send(JSON.stringify({message: message, mode: "ECB", type: "file", fileName: 'asd.txt'}))
                 appendMessage({message: message, from: "send"})
             }
           
