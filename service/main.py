@@ -55,18 +55,19 @@ def sending_messages(c, public_partner):
             data = messagesToSend.pop()
             plain_text = pad(data['message'])
             mode = data['mode']
-           
+            fileName = data['fileName']
+
             if mode == "CBC":
                 iv = Random.new().read(block_size)
                 cipher = AES.new(session_key, AES.MODE_CBC, iv)
                 encrypted_text = cipher.encrypt(plain_text.encode())
 
-                json_data = json.dumps({"encrypted_text": b64encode(iv + encrypted_text).decode(), "type":  data['type'], "mode": mode})
+                json_data = json.dumps({"encrypted_text": b64encode(iv + encrypted_text).decode(), "type":  data['type'], "mode": mode, "fileName": fileName})
 
             else:
                 cipher = AES.new(session_key, AES.MODE_ECB)
                 encrypted_text = cipher.encrypt(plain_text.encode())
-                json_data = json.dumps({"encrypted_text":b64encode(encrypted_text).decode(), "type":  data['type'], "mode": mode})
+                json_data = json.dumps({"encrypted_text":b64encode(encrypted_text).decode(), "type":  data['type'], "mode": mode, "fileName": fileName})
 
             if  data['type'] == "text":   
                 c.send(bytes(json_data, 'utf-8'))
@@ -78,9 +79,9 @@ def sending_messages(c, public_partner):
                 sha256hash = hashlib.sha256(plain_text.encode()).hexdigest()
                 print('hash', sha256hash)
                 if mode == "CBC":
-                    json_data = json.dumps({"type":  data['type'], "iv": b64encode(iv).decode(), "mode": mode, "max_size": max_size, "hash": sha256hash})
+                    json_data = json.dumps({"type":  data['type'], "iv": b64encode(iv).decode(), "mode": mode, "max_size": max_size, "hash": sha256hash, "fileName": fileName})
                 else:
-                    json_data = json.dumps({"type":  data['type'], "mode": mode,  "max_size": max_size, "hash": sha256hash})
+                    json_data = json.dumps({"type":  data['type'], "mode": mode,  "max_size": max_size, "hash": sha256hash, "fileName": fileName})
 
                 c.send(bytes(json_data, 'utf-8'))
 
@@ -118,6 +119,7 @@ def reveiving_message(c, private_key, size):
         json_data = json.loads(c.recv(size).decode("utf-8"))
         mode = json_data['mode']
         type = json_data['type']
+        fileName = json_data['fileName']
 
         if type == "text":
             if mode == "CBC":
@@ -184,7 +186,8 @@ def reveiving_message(c, private_key, size):
                 'typeMessage': type,
                 'status': status,
                 'message': result,
-                'from': "recv"
+                'from': "recv",
+                "fileName": fileName
             }
         )
 
