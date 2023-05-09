@@ -27,7 +27,7 @@
       </div>
       <div v-if="(messageType === 'file' && encodingType !== '')">
         <input class="fileInput" type="file" @change="onFileChange" ref="file"/>
-      </div><button id="sendButton" v-if="textMsg !== ''" :onClick="sendMessage" :disabled="!status">Send</button></div>
+      </div><button id="sendButton" v-if="textMsg !== ''" :onClick="sendMessage" :disabled="!status || percentage > 0">Send</button></div>
   </div>
   <div id="progress-bar" v-if="percentage > 0">
     <div>
@@ -90,12 +90,16 @@ export default {
       let data = JSON.parse(event.data);
       if (data.type === 'progressInformation') {
         vueInstance.percentage = data.chunk / data.max * 100
+        if (vueInstance.percentage >= 100) {
+          vueInstance.percentage = 0;
+        }
         return;
       }
       if (data.typeMessage === 'file') {
         vueInstance.percentage = 0;
         vueInstance.fileContent = data.message;
-        let fileName = data.message.split(';')[2];
+        let fileName = data.fileName;
+
         vueInstance.messagesFromFriend.push(fileName);
         vueInstance.allMessages.push({
           "message": fileName,
@@ -131,13 +135,11 @@ export default {
       this.router.push({path: '/'})
     },
     sendMessage() {
-      if (this.messageType === 'file') {
-        this.textMsg = this.textMsg + ";" + this.fileName;
-      }
       this.connection.send(JSON.stringify({
         message: this.textMsg,
         type: this.messageType,
-        mode: this.encodingType
+        mode: this.encodingType,
+        fileName: this.fileName
       }));
       this.addMyMessage();
     },
@@ -181,7 +183,7 @@ export default {
         return;
       }
       let fileIndex = this.fileNames.indexOf(message.message);
-      this.downloadFile(this.files[fileIndex].split(";")[0] + ";" + this.files[fileIndex].split(";")[1], message.message);
+      this.downloadFile(this.files[fileIndex], message.message);
     }
   }
   
