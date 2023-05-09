@@ -29,7 +29,7 @@ class WSConsumer(WebsocketConsumer):
 
     def chat_message(self, event):
         if event['information'] == "message":
-            self.send(text_data=json.dumps({"message": event["message"], "typeMessage": event["typeMessage"], "type": event["information"], "from": event["from"]}))
+            self.send(text_data=json.dumps({"message": event["message"], "typeMessage": event["typeMessage"], "type": event["information"], "from": event["from"], "status": event['status']}))
             print("MESSAGE RECEIVED")
         else:
             self.send(text_data=json.dumps({"type": event["information"], "from": event["from"], "chunk": event["chunk"],  "max": event["max"]}))

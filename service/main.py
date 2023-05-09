@@ -17,6 +17,7 @@ from base64 import b64encode, b64decode
 from time import sleep
 from random import randrange
 import json
+import hashlib
 
 sys.path.insert(0, '..')
 
@@ -74,11 +75,12 @@ def sending_messages(c, public_partner):
             else: #file
                 size = 256
                 max_size = int(len(encrypted_text) / size)
-
+                sha256hash = hashlib.sha256(plain_text.encode()).hexdigest()
+                print('hash', sha256hash)
                 if mode == "CBC":
-                    json_data = json.dumps({"type":  data['type'], "iv": b64encode(iv).decode(), "mode": mode, "max_size": max_size})
+                    json_data = json.dumps({"type":  data['type'], "iv": b64encode(iv).decode(), "mode": mode, "max_size": max_size, "hash": sha256hash})
                 else:
-                    json_data = json.dumps({"type":  data['type'], "mode": mode,  "max_size": max_size})
+                    json_data = json.dumps({"type":  data['type'], "mode": mode,  "max_size": max_size, "hash": sha256hash})
 
                 c.send(bytes(json_data, 'utf-8'))
 
@@ -112,6 +114,7 @@ def sending_messages(c, public_partner):
 
 def reveiving_message(c, private_key, size):
     while True:
+        status = True
         json_data = json.loads(c.recv(size).decode("utf-8"))
         mode = json_data['mode']
         type = json_data['type']
@@ -133,7 +136,7 @@ def reveiving_message(c, private_key, size):
             result = message
         else:
             message = b""
-
+            prehash = json_data['hash']
             if mode == "CBC":
                 iv = b64decode(json_data['iv'])
                 cipher = AES.new(session_key, AES.MODE_CBC, iv)
@@ -166,8 +169,10 @@ def reveiving_message(c, private_key, size):
 
             plain_text = cipher.decrypt(message).decode()
             result = unpad(plain_text)
-
-            print("Partner: " + "file")
+            sha256hash = hashlib.sha256(plain_text.encode()).hexdigest()
+            
+            status = sha256hash == prehash
+            print("Partner: " + "file! Status = ", status)
 
     
 
@@ -177,6 +182,7 @@ def reveiving_message(c, private_key, size):
                 "type": "chat.message",
                 'information': "message",
                 'typeMessage': type,
+                'status': status,
                 'message': result,
                 'from': "recv"
             }
