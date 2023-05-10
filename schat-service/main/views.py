@@ -50,13 +50,19 @@ def decrypt(token: bytes, key: bytes) -> bytes:
 @csrf_exempt
 def login(request):
     data = database.child('Data').child('accounts').get()
+    iterable = True
+    try:
+        iter(data)
+
+    except TypeError:
+        iterable = False
     body = json.loads(request.body)
     global local_key, login
 
     logins = []
-
-    for d in data:
-        logins.append(d.val()['login'])
+    if iterable:
+        for d in data:
+            logins.append(d.val()['login'])
 
     if body['login'] not in logins:
         salt = bcrypt.gensalt()
@@ -69,7 +75,7 @@ def login(request):
             "password": password
         })['name']
 
-    else:
+    elif iterable:
         for d in data:
             if d.val()['login'] == body['login']:
                 local_key = hashlib.sha256(d.val()['password'].encode()).digest()
