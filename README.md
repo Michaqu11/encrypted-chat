@@ -10,6 +10,10 @@
 
 https://github.com/Michaqu11/encrypted-chat/assets/78599029/8862f18a-c6e4-47f2-966c-2dd18b32f36f
 
+### Tech stack:
+  - Typescript / Vue
+  - Python / Django
+  - Firebase
 
 ### Used encrytpion methods:
   - RSA
