@@ -71,7 +71,6 @@ def login(request):
 
     else:
         for d in data:
-            print(d.val())
             if d.val()['login'] == body['login']:
                 local_key = hashlib.sha256(d.val()['password'].encode()).digest()
 
@@ -113,7 +112,6 @@ def generate_public_key(request):
     savehash = open("config/keys/hash.txt","wb")
     savehash.write(local_key)
     savehash.close()
-    print(private_key, " pub\n", public_key, "\n")
 
     result = {
         "public_key": '{0}'.format(public_key)
