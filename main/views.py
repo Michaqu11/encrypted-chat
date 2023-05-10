@@ -13,12 +13,13 @@ import rsa
 import socket
 import hashlib
 from base64 import b64encode, b64decode
+from cryptography.fernet import Fernet
+
+
 
 firebase = pyrebase.initialize_app(FIREBASE_CONFIG)
 authe = firebase.auth()
 database = firebase.database()
-
-
 
 
 public_key = None
@@ -39,9 +40,6 @@ def print_data():
 
 def index(request):
     return render(request, 'index.html', context={'text': 'S-CHAT'})
-    # return HttpResponse("<h1>S-CHAT</h1>")
-
-from cryptography.fernet import Fernet
 
 def encrypt(message: bytes, key: bytes) -> bytes:
     return Fernet(key).encrypt(message)
@@ -51,15 +49,20 @@ def decrypt(token: bytes, key: bytes) -> bytes:
 
 @csrf_exempt
 def login(request):
-    data = database.child('Data').child('users').get().val()
+    data = database.child('Data').child('accounts').get()
     body = json.loads(request.body)
     global local_key, login
 
-    if body['login'] not in data:
+    logins = []
+
+    for d in data:
+        logins.append(d.val()['login'])
+
+    if body['login'] not in logins:
         salt = bcrypt.gensalt()
         password = bcrypt.hashpw(body['password'].encode('utf-8'), salt).decode('utf-8')
         local_key = hashlib.sha256(password.encode()).digest()
-        login  = database.child('Data').child('users').push(
+        login  = database.child('Data').child('accounts').push(
         {
             "date": str(datetime.datetime.now()),
             "login": body['login'],
@@ -67,14 +70,10 @@ def login(request):
         })['name']
 
     else:
-        login = data.child('Data').child('users').child(body['login']).get().val()
-        
-
-    # data = database.child('Data').child('users').get()
-
-    # for d in data:
-    #     if d.key() == login:
-    #         print(d.val()['hash'])
+        for d in data:
+            print(d.val())
+            if d.val()['login'] == body['login']:
+                local_key = hashlib.sha256(d.val()['password'].encode()).digest()
 
     result = {
         "error": False
@@ -88,31 +87,33 @@ def generate_public_key(request):
     global size, public_key, private_key
     size = 1024 if request.GET.get('size') == "1024" else 2048
 
-    shahash = open("config/keys/hash.txt","r")
-    hash = shahash.readline(0)
+    shahash = open("config/keys/hash.txt","rb")
+    hash = shahash.read()
     shahash.close()
 
-    if hash and hashlib.sha256(hash.encode()).hexdigest() == local_key:
-        privFile = open("config/klocal_keyeys/priv.txt","r")
-        pubFile = open("config/keys/pub.txt","r")
-        private_key = Fernet(bytes(local_key)).decrypt(bytes(privFile.readline(0))).decode()
-        public_key = pubFile.readline(0)
+    if hash and local_key == hash:
+        privFile = open("config/keys/priv.txt","rb")
+        pubFile = open("config/keys/pub.txt","rb")
+        token = privFile.read()
+        public_key = rsa.PublicKey.load_pkcs1(pubFile.read())
+        private_key = rsa.PrivateKey.load_pkcs1(decrypt(token, b64encode(local_key)))
         pubFile.close()
         privFile.close()
 
     else:
         public_key, private_key = rsa.newkeys(size)
-        privFile = open("config/keys/priv.txt","w")
-        pubFile = open("config/keys/pub.txt","w")
-        privFile.writelines(str(encrypt(private_key.save_pkcs1(), b64encode(local_key))))
-        pubFile.writelines(str(public_key))
+        privFile = open("config/keys/priv.txt","wb")
+        pubFile = open("config/keys/pub.txt","wb")
+        token = encrypt(private_key.save_pkcs1("PEM"), b64encode(local_key))
+        privFile.write(token)
+        pubFile.write(public_key.save_pkcs1("PEM"))
         pubFile.close()
         privFile.close()
 
-    savehash = open("config/keys/hash.txt","w")
-    savehash.writelines(str(local_key))
+    savehash = open("config/keys/hash.txt","wb")
+    savehash.write(local_key)
     savehash.close()
-
+    print(private_key, " pub\n", public_key, "\n")
 
     result = {
         "public_key": '{0}'.format(public_key)
