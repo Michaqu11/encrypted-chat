@@ -83,6 +83,7 @@ export default {
   },
   mounted() {
     let vueInstance = this;
+    console.log(process.env.VUE_APP_SOCKET_URL, "dsadasdsa")
     this.connection = new WebSocket(`${process.env.VUE_APP_SOCKET_URL}`);
     vueInstance.status = true;
 
