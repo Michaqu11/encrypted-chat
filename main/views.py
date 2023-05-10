@@ -51,7 +51,7 @@ def decrypt(token: bytes, key: bytes) -> bytes:
 
 @csrf_exempt
 def login(request):
-    data = database.child('Data').child('users').get()
+    data = database.child('Data').child('users').get().val()
     body = json.loads(request.body)
     global local_key, login
 
