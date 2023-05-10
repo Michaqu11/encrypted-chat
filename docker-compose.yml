@@ -3,17 +3,17 @@ version: '3.9'
 services:
   django1:
     build:
-      context: './schat-service/encrypted-chat'
+      context: './schat-service'
     ports:
       - "8000:8000"
   django2:
     build:
-      context: './schat-service/encrypted-chat'
+      context: './schat-service'
     ports:
       - "7000:8000"
   vue1:
     build:
-      context: './schat-ui/encrypted-chat'
+      context: './schat-ui'
       args:
         VUE_APP_BACKEND_URL: http://localhost:8000
         VUE_APP_SOCKET_URL: ws://127.0.0.1:8000/ws/socket-server/
@@ -21,7 +21,7 @@ services:
       - "8080:8080"
   vue2:
     build:
-      context: './schat-ui/encrypted-chat'
+      context: './schat-ui'
       args:
         VUE_APP_BACKEND_URL: http://localhost:7000
         VUE_APP_SOCKET_URL: ws://127.0.0.1:7000/ws/socket-server/
