@@ -4,13 +4,18 @@ services:
   django1:
     build:
       context: "./schat-service"
+      args:
+        BACKEND_URL: 8000
     ports:
       - "8000:8000"
+
   django2:
     build:
       context: "./schat-service"
+      args:
+        BACKEND_URL: 7000
     ports:
-      - "7000:8000"
+      - "7000:7000"
   vue1:
     build:
       context: "./schat-ui"

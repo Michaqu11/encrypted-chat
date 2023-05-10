@@ -2,6 +2,10 @@ FROM python:3.9
 
 ENV PYTHONUNBUFFERED=1
 
+ARG BACKEND_URL 
+
+ENV VARIABLE=$BACKEND_URL
+
 WORKDIR /code
 
 COPY requirements.txt .
@@ -11,6 +15,8 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-EXPOSE 8000
+COPY . $BACKEND_URL
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+EXPOSE $BACKEND_URL
+
+CMD ["sh", "-c","python manage.py runserver 0.0.0.0:${VARIABLE}"]
